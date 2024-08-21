@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steganography Encoder/Decoder</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      height: 100%;
+      background-color: black;
+      color: #00ff00;
+      font-family: 'Press Start 2P', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #00ff00;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    nav a#home {
+      color: #00ff00;
+      text-align: center;
+      text-decoration: none;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    form {
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 4px;
+      background-color: #111;
+      box-shadow: 0 0 10px #00ff00;
+      width: 80%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-align: left;
+    }
+
+    input[type="file"],
+    textarea,
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #00ff00;
+      background-color: black;
+      color: #00ff00;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    input[type="submit"] {
+      background-color: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 16px;
+      transition: 0.3s;
+      text-shadow: 0 0 5px #00ff00;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #00ff00;
+      color: black;
+    }
+
+    .toggle-key {
+      background: none;
+      border: none;
+      color: #00ff00;
+      cursor: pointer;
+      padding: 0;
+      font-size: 12px;
+      margin-top: -10px;
+      margin-bottom: 10px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .toggle-key:hover {
+      text-shadow: 0 0 5px #00ff00;
+    }
+
+    footer p {
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #00ff00;
+      text-shadow: 0 0 5px #00ff00;
+    }
+
+    #messageModal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #111;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #00ff00;
+      display: none;
+      z-index: 10;
+      max-width: 90%;  /* Limite la largeur du modal à 90% de la fenêtre */
+      max-height: 80%; /* Limite la hauteur du modal à 80% de la fenêtre */
+      overflow-y: auto; /* Ajoute une barre de défilement verticale si nécessaire */
+    }
+
+    #messageModal h2 {
+      margin-top: 0;
+    }
+
+    #messageModal pre {
+      white-space: pre-wrap; /* Permet de conserver les sauts de ligne tout en adaptant le texte à la largeur du modal */
+      word-wrap: break-word; /* Permet de couper les mots si nécessaire pour s'adapter au modal */
+    }
+
+    #messageModal button {
+      background-color: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-top: 10px;
+      text-shadow: 0 0 5px #00ff00;
+    }
+
+    #messageModal button:hover {
+      background-color: #00ff00;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <h1>Steganography Encoder/Decoder</h1>
+  <nav>
+    <a id="home" href="{{ url_for('home') }}">Home</a>
+  </nav>
+  
+  <form action="{{ url_for('encode') }}" method="post" enctype="multipart/form-data">
+    <label for="inputImage">Upload Image:</label>
+    <input type="file" id="inputImage" name="inputImage"><br>
+
+    <label for="message">Enter Message:</label><br>
+    <textarea id="message" name="message" rows="4" cols="50"></textarea><br>
+
+    <label for="secretKeyEncode">Secret Key:</label>
+    <input type="password" id="secretKeyEncode" name="secretKey"><br>
+    <button type="button" class="toggle-key" onclick="togglePassword('secretKeyEncode')">Show/Hide Key</button>
+
+    <input type="submit" value="Encode">
+  </form>
+
+  <form action="{{ url_for('decode') }}" method="post" enctype="multipart/form-data">
+    <label for="encodedImage">Upload Encoded Image:</label>
+    <input type="file" id="encodedImage" name="encodedImage"><br>
+
+    <label for="secretKeyDecode">Secret Key:</label>
+    <input type="password" id="secretKeyDecode" name="secretKey"><br>
+    <button type="button" class="toggle-key" onclick="togglePassword('secretKeyDecode')">Show/Hide Key</button>
+
+    <input type="submit" value="Decode">
+  </form>
+
+  <!-- Modal -->
+  <div id="messageModal">
+    <div>
+      <h2>Decoded Message</h2>
+      <pre id="decodedMessage"></pre>
+      <button onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>©SteganoApp - Adam Production</p>
+  </footer>
+
+  <script>
+    function showModal(message) {
+        document.getElementById('decodedMessage').textContent = message;
+        document.getElementById('messageModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('messageModal').style.display = 'none';
+    }
+
+    function togglePassword(id) {
+        var element = document.getElementById(id);
+        if (element.type === "password") {
+            element.type = "text";
+        } else {
+            element.type = "password";
+        }
+    }
+
+    {% if message %}
+    showModal(`{{ message | safe }}`);
+    {% endif %}
+  </script>
+</body>
+</html>
+
